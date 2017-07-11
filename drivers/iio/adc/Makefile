@@ -19,6 +19,7 @@ obj-$(CONFIG_ADM1177) += adm1177.o
 
 cf_axi_adc-y := cf_axi_adc_core.o cf_axi_adc_ring_stream.o
 obj-$(CONFIG_CF_AXI_ADC) += cf_axi_adc.o
+obj-$(CONFIG_CF_AXI_PL) += cf_axi_pl_core.o
 
 obj-$(CONFIG_AD6676) += ad6676.o
 

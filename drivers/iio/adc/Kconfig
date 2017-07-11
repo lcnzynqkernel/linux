@@ -173,6 +173,14 @@ config CF_AXI_ADC
 	  To compile this driver as a module, choose M here: the
 	  module will be called cf_axi_adc.
 
+config CF_AXI_PL
+	tristate "Analog Devices High-Speed AXI PL driver core"
+	select IIO_BUFFER
+	select IIO_HW_CONSUMER
+	help
+	  Say yes here to build support for cf_pl_adc.
+
+
 config AD9361
 	tristate "Analog Devices AD9361, AD9364 RF Agile Transceiver driver"
 	depends on SPI

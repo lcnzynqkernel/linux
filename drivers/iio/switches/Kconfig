@@ -1,0 +1,46 @@
+#
+# RF switches, etc.
+#
+# When adding new entries keep the list in alphabetical order
+
+menu "Switches"
+
+
+
+config MASW010350
+	tristate "Macom MASW010350 switch"
+	help
+	  Say yes here to build support for Macom MASW010350
+	  SP4T switch
+
+config RX1
+	tristate "RX1 config"
+	help
+	  Say yes here to build support for RX1 rf configuration
+
+config RX2
+	tristate "RX2 config"
+	help
+	  Say yes here to build support for RX2 rf configuration
+
+config I2C_CPLD_BRIDGE
+	tristate "I2C-CPLD-BRIDGE config"
+	help
+	  Say yes here to build support for I2C-CPLD-BRIDGE configuration
+
+config RX1_DEMOD
+	tristate "RX1 demodulator control"
+	help
+	  Say yes here to build support for RX1 demodulator config
+
+config TRIGGER_SYNC
+	tristate "TRIGGER SYNC control"
+	help
+	  Say yes here to build support for TRIGGER SYNC control"
+
+
+endmenu
+
+
+
+

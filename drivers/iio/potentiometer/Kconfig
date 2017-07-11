@@ -29,4 +29,14 @@ config TPL0102
 	  To compile this driver as a module, choose M here: the
 	  module will be called tpl0102.
 
+config TQP4M9072
+	tristate "Triquint TQP4M9072 DSA"
+	depends on SPI
+	help
+	  Say yes here to build support for Triquint TQP4M9072
+	  SPI Digital Attenuator
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called tqp4m9072.
+
 endmenu

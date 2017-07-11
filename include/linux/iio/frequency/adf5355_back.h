@@ -68,7 +68,7 @@
 	bool			cp_neg_bleed_en;
 	bool			cp_gated_bleed_en;
 	bool			phase_detector_polarity_neg;
-	bool 			bleed_polarity_neg;
+
 	bool			mute_till_lock_detect_en;
 	bool 			outb_en;
 	bool 			outa_en;

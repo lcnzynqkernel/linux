@@ -30,5 +30,6 @@ obj-y += orientation/
 obj-y += potentiometer/
 obj-y += pressure/
 obj-y += proximity/
+obj-y += switches/
 obj-y += temperature/
 obj-y += trigger/

@@ -50,7 +50,10 @@ Module.symvers
 /vmlinuz
 /System.map
 /Module.markers
+/oe-logs
+/oe-workdir
 
+user_*.cfg
 #
 # Debian directory (make deb-pkg)
 #

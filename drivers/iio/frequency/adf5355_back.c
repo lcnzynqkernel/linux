@@ -83,7 +83,6 @@
 #define ADF5355_REG6_FEEDBACK_FUND(x)		((x) << 24)
 #define ADF5355_REG6_NEG_BLEED_EN(x)		((x) << 29)
 #define ADF5355_REG6_GATED_BLEED_EN(x)		((x) << 30)
-#define ADF5355_REG6_BLEED_POLARITY(x)		((x) << 31)
 #define ADF5355_REG6_DEFAULT			0x14000006
 
 
@@ -93,13 +92,10 @@
 #define ADF5355_REG7_LOL_MODE_EN(x)		((x) << 7)
 #define ADF5355_REG7_LD_CYCLE_CNT(x)		(((x) & 0x3) << 8)
 #define ADF5355_REG7_LE_SYNCED_REFIN_EN(x)	((x) << 25)
-#define ADF5355_REG7_LE_SEL_SYNC_EDGE(x)	((1) << 27)
 #define ADF5355_REG7_DEFAULT			0x10000007
-#define ADF4356_REG7_DEFAULT			0x04000007
 
 /* REG8 Bit Definitions */
 #define ADF5355_REG8_DEFAULT			0x102D0428
-#define ADF4356_REG8_DEFAULT			0x15596568
 
 /* REG9 Bit Definitions */
 #define ADF5355_REG9_SYNTH_LOCK_TIMEOUT(x)	(((x) & 0x1F) << 4)
@@ -115,18 +111,11 @@
 
 /* REG11 Bit Definitions */
 #define ADF5355_REG11_DEFAULT			0x0061300B
-#define ADF4356_REG11_DEFAULT			0x0061200B
 
 /* REG12 Bit Definitions */
 #define ADF5355_REG12_PHASE_RESYNC_CLK_DIV(x)	(((x) & 0xFFFF) << 16)
 #define ADF5355_REG12_DEFAULT			0x0000041C
 
-#define ADF4356_REG12_PHASE_RESYNC_CLK_VALUE(x)	(((x) & 0xFFFFF) << 12)
-#define ADF4356_REG12_DEFAULT			0x0000005F
-
-/* REG13 Bit Definitions */
-#define ADF4356_REG13_AUX_MSB_FRAC2(x)	(((x) & 0x3FFF) << 18)
-#define ADF4356_REG13_AUX_MSB_MOD(x)	(((x) & 0x3FFF) << 4)
 
 /* Specifications */
 #define ADF5355_MIN_VCO_FREQ		3400000000ULL /* Hz */
@@ -153,11 +142,6 @@
 #define ADF4355_2_MAX_VCO_FREQ		6800000000ULL /* Hz */
 #define ADF4355_2_MAX_OUT_FREQ		4400000000ULL /* Hz */
 #define ADF4355_2_MIN_OUT_FREQ		(ADF4355_2_MIN_VCO_FREQ / 64) /* Hz */
-
-#define ADF4356_MIN_VCO_FREQ		3400000000ULL /* Hz */
-#define ADF4356_MAX_VCO_FREQ		6800000000ULL /* Hz */
-#define ADF4356_MAX_OUT_FREQ		ADF4356_MAX_VCO_FREQ /* Hz */
-#define ADF4356_MIN_OUT_FREQ		(ADF4356_MIN_VCO_FREQ / 64) /* Hz */
 
 
 #define ADF5355_MAX_FREQ_PFD		125000000UL /* Hz */
@@ -197,7 +181,6 @@ enum {
 	ADF4355,
 	ADF4355_2,
 	ADF4355_3,
-	ADF4356,
 };
 
 struct adf5355_state {
@@ -219,11 +202,9 @@ struct adf5355_state {
 	u32			rf_div_sel;
 	u32			delay_us;
 	u32			regs[ADF5355_REG_NUM];
-	u32			reg13;
 	u32			clock_shift;
 	bool			all_synced;
 	bool			is_5355;
-	bool 			is_4356;
 	/*
 	 * DMA (thus cache coherency maintenance) requires the
 	 * transfer buffers to live in their own cache lines.
@@ -254,8 +235,6 @@ static int adf5355_sync_config(struct adf5355_state *st, bool sync_all)
 	int ret, i;
 
 	if (sync_all || !st->all_synced) {
-		if(st->is_4356)
-			ret = adf5355_spi_write(st, st->reg13 | 13);
 		for (i = ADF5355_REG12; i >= ADF5355_REG0; i--) {
 				ret = adf5355_spi_write(st, st->regs[i] | i);
 				if (ret < 0)
@@ -263,8 +242,6 @@ static int adf5355_sync_config(struct adf5355_state *st, bool sync_all)
 		}
 		st->all_synced = true;
 	} else {
-			if(st->is_4356)
-				ret = adf5355_spi_write(st, st->reg13 | 13);
 			ret = adf5355_spi_write(st, st->regs[6] | 6);
 			if (ret < 0)
 				return ret;
@@ -392,7 +369,6 @@ static int adf5355_setup(struct adf5355_state *st, unsigned long parent_rate)
 	tmp = DIV_ROUND_CLOSEST(pdata->cp_curr_uA - 315, 315U);
 	tmp = clamp(tmp, 0U, 15U);
 
-
 	st->regs[ADF5355_REG4] =
 		ADF5355_REG4_COUNTER_RESET_EN(0) |
 		ADF5355_REG4_CP_THREESTATE_EN(0) |
@@ -414,10 +390,9 @@ static int adf5355_setup(struct adf5355_state *st, unsigned long parent_rate)
 		ADF5355_REG7_LOL_MODE_EN(0) |
 		ADF5355_REG7_LD_CYCLE_CNT(0) |
 		ADF5355_REG7_LE_SYNCED_REFIN_EN(1) |
-	 	(st->is_4356? ADF5355_REG7_LE_SEL_SYNC_EDGE(1):0) |
-		(st->is_4356? ADF4356_REG7_DEFAULT:ADF5355_REG7_DEFAULT);
+		ADF5355_REG7_DEFAULT;
 
-	st->regs[ADF5355_REG8] = (st->is_4356? ADF4356_REG8_DEFAULT:ADF5355_REG8_DEFAULT);
+	st->regs[ADF5355_REG8] = ADF5355_REG8_DEFAULT;
 
 	/* Calculate Timeouts */
 	tmp = DIV_ROUND_UP(st->fpfd, 20000U * 30U);
@@ -439,18 +414,10 @@ static int adf5355_setup(struct adf5355_state *st, unsigned long parent_rate)
 		ADF5355_REG10_ADC_CLK_DIV(tmp) |
 		ADF5355_REG10_DEFAULT;
 
-	st->regs[ADF5355_REG11] = (st->is_4356? ADF4356_REG11_DEFAULT:ADF5355_REG11_DEFAULT);
+	st->regs[ADF5355_REG11] = ADF5355_REG11_DEFAULT;
 
-	if(st->is_4356==true){
-		st->regs[ADF5355_REG12] = ADF4356_REG12_PHASE_RESYNC_CLK_VALUE(0) |
-			ADF4356_REG12_DEFAULT;
-		st->reg13= ADF4356_REG13_AUX_MSB_FRAC2(0) |
-			ADF4356_REG13_AUX_MSB_MOD(0);
-	}
-	else{
-		st->regs[ADF5355_REG12] = ADF5355_REG12_PHASE_RESYNC_CLK_DIV(0) |
-			ADF5355_REG12_DEFAULT;
-	}
+	st->regs[ADF5355_REG12] = ADF5355_REG12_PHASE_RESYNC_CLK_DIV(0) |
+		ADF5355_REG12_DEFAULT;
 
 	st->all_synced = false;
 
@@ -513,7 +480,6 @@ static int adf5355_set_freq(struct adf5355_state *st, unsigned long long freq,
 		ADF5355_REG6_FEEDBACK_FUND(1) |
 		ADF5355_REG6_NEG_BLEED_EN(pdata->cp_neg_bleed_en) |
 		ADF5355_REG6_GATED_BLEED_EN(pdata->cp_gated_bleed_en) |
-		ADF5355_REG6_BLEED_POLARITY (st->is_4356==true?pdata->bleed_polarity_neg:0) |
 		ADF5355_REG6_DEFAULT;
 
 	st->freq_req = freq;
@@ -769,7 +735,6 @@ static struct adf5355_platform_data *adf5355_parse_dt(struct device *dev)
 
 	pdata->cp_neg_bleed_en = of_property_read_bool(np, "adi,charge-pump-negative-bleed-enable");
 	pdata->cp_gated_bleed_en = of_property_read_bool(np, "adi,charge-pump-gated-bleed-enable");
-	pdata->bleed_polarity_neg = of_property_read_bool(np, "adi,bleed-polarity-enable");
 
 	pdata->clock_shift = 1;
 	of_property_read_u32(np, "adi,clock-shift", &pdata->clock_shift);
@@ -890,38 +855,27 @@ static int adf5355_probe(struct spi_device *spi)
 	switch (spi_get_device_id(spi)->driver_data) {
 	case ADF5355:
 		st->is_5355 = true;
-		st->is_4356 = false;
 		st->max_out_freq = ADF5355_MAX_OUT_FREQ;
 		st->min_out_freq = ADF5355_MIN_OUT_FREQ;
 		st->min_vco_freq = ADF5355_MIN_VCO_FREQ;
 		break;
 	case ADF4355:
 		st->is_5355 = false;
-		st->is_4356 = false;
 		st->max_out_freq = ADF4355_MAX_OUT_FREQ;
 		st->min_out_freq = ADF4355_MIN_OUT_FREQ;
 		st->min_vco_freq = ADF4355_MIN_VCO_FREQ;
 		break;
 	case ADF4355_2:
 		st->is_5355 = false;
-		st->is_4356 = false;
 		st->max_out_freq = ADF4355_2_MAX_OUT_FREQ;
 		st->min_out_freq = ADF4355_2_MIN_OUT_FREQ;
 		st->min_vco_freq = ADF4355_2_MIN_VCO_FREQ;
 		break;
 	case ADF4355_3:
 		st->is_5355 = false;
-		st->is_4356 = false;
 		st->max_out_freq = ADF4355_3_MAX_OUT_FREQ;
 		st->min_out_freq = ADF4355_3_MIN_OUT_FREQ;
 		st->min_vco_freq = ADF4355_3_MIN_VCO_FREQ;
-		break;
-	case ADF4356:
-		st->is_5355 = false;
-		st->is_4356 = true;
-		st->max_out_freq = ADF4356_MAX_OUT_FREQ;
-		st->min_out_freq = ADF4356_MIN_OUT_FREQ;
-		st->min_vco_freq = ADF4356_MIN_VCO_FREQ;
 		break;
 	}
 
@@ -1048,7 +1002,6 @@ static const struct spi_device_id adf5355_id[] = {
 	{"adf4355", ADF4355},
 	{"adf4355-2", ADF4355_2},
 	{"adf4355-3", ADF4355_3},
-	{"adf4356",	ADF4356},
 	{}
 };
 
